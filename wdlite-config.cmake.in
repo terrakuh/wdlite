@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+find_dependency(curlio::curlio REQUIRED)
+find_dependency(nlohmann_json REQUIRED)
+
+if(NOT TARGET wdlite::wdlite)
+	include("${CMAKE_CURRENT_LIST_DIR}/wdlite-targets.cmake")
+	set(wdlite_FOUND TRUE)
+endif()

@@ -1,0 +1,3 @@
+[submodule "vendor/cURLio"]
+	path = vendor/cURLio
+	url = https://github.com/terrakuh/cURLio.git

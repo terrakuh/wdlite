@@ -214,11 +214,9 @@ inline Session::~Session()
 	        [](curlio::detail::asio_error_code& /* ec */, nlohmann::json /* response */) {});
 }
 
-} // namespace wdlite
-
 template<typename Token>
-inline auto wdlite::async_new_session(Session::executor_type executor, std::string endpoint,
-                                      nlohmann::json capabilities, Token&& token)
+inline auto async_new_session(Session::executor_type executor, std::string endpoint,
+                              nlohmann::json capabilities, Token&& token)
 {
 	std::shared_ptr<Session> session{ new Session{ std::move(executor), std::move(endpoint) } };
 
@@ -234,3 +232,5 @@ inline auto wdlite::async_new_session(Session::executor_type executor, std::stri
 		                      return ec ? nullptr : std::move(session);
 	                      });
 }
+
+} // namespace wdlite

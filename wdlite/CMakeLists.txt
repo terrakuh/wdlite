@@ -9,6 +9,10 @@ target_include_directories(
 target_link_libraries(wdlite INTERFACE curlio::curlio nlohmann_json::nlohmann_json)
 target_compile_features(wdlite INTERFACE cxx_std_17)
 
+if(WDLITE_ENABLE_LOGGING)
+  target_compile_definitions(wdlite INTERFACE WDLITE_ENABLE_LOGGING)
+endif()
+
 install(TARGETS wdlite EXPORT ${PROJECT_NAME}-targets)
 install(
   DIRECTORY .

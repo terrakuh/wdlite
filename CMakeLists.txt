@@ -16,6 +16,8 @@ endif()
 
 option(WDLITE_BUILD_EXAMPLES "Build the provided examples." ${PROJECT_NAME}_TOP_LEVEL)
 option(WDLITE_FETCH_DEPENDENCIES "Fetches the required dependencies automatically." OFF)
+option(WDLITE_ENABLE_LOGGING "Prints debug information. Mainly for development." OFF)
+mark_as_advanced(WDLITE_ENABLE_LOGGING)
 
 set(required REQUIRED)
 if(WDLITE_FETCH_DEPENDENCIES)

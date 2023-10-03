@@ -1,4 +1,5 @@
 #include "element.hpp"
+#include "log.hpp"
 #include "session.hpp"
 
 #include <type_traits>
@@ -121,7 +122,7 @@ auto perform_request(std::shared_ptr<curlio::Session> session, const std::string
 		  }
 			// Response was received now finish up.
 		  case 2:
-			  std::cout << "result: " << std::get<2>(result) << "\n";
+				WDLITE_DEBUG("Result: " << std::get<2>(result));
 			  detail::complete_token(self, lambda, ec, nlohmann::json::parse(std::get<2>(result)));
 			  break;
 		  }
@@ -266,7 +267,7 @@ inline auto Session::_post(const std::string& endpoint, const nlohmann::json& pa
 	                               [payload = payload.dump()](curlio::Request& request) {
 		                               request.set_option<CURLOPT_COPYPOSTFIELDS>(payload.c_str());
 		                               request.append_header("content-type: application/json");
-		                               std::cout << "sending: " << payload << "\n";
+																	 WDLITE_DEBUG("Sending: " << payload);
 	                               });
 }
 

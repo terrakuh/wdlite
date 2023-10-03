@@ -83,6 +83,11 @@ public:
 	template<typename Token>
 	auto async_find_elements(std::string_view selector, LocatorStrategy strategy, Token&& token);
 
+	template<typename Token>
+	auto async_execute_script_sync(std::string_view script, Token&& token);
+	template<typename Token>
+	auto async_execute_script_async(std::string_view script, nlohmann::json arguments, Token&& token);
+
 private:
 	friend Element;
 
@@ -101,21 +106,6 @@ private:
 	auto _post(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
 	template<typename Token, typename Lambda>
 	auto _delete(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
-	/**
-	 * Performs the WebDriver request for the given endpoint. This is just the generic implementation for
-	 * `_get()`, `_post()` and `_delete()`.
-	 *
-	 * @param endpoint Joined together with first part of the WebDriver URL.
-	 * @param token The ASIO completion token.
-	 * @param lambda This lambda will receive the JSON response from the WebDriver. The result of this lambda
-	 * will be forwarded to the completion token. The signature is `<return>(curlio::detail::asio_error_code&,
-	 * nlohmann::json)`.
-	 * @param modifier This modifier will be called once before the request starts. This instance will be kept
-	 * alive. The signature is `void(curlio::Request&)`.
-	 */
-	template<typename Token, typename Lambda, typename RequestModifier>
-	auto _perform_request(const std::string& endpoint, Token&& token, Lambda&& lambda,
-	                      RequestModifier&& modifier);
 };
 
 } // namespace wdlite

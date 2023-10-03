@@ -28,6 +28,11 @@ public:
 	template<typename Token>
 	auto async_send_keys(std::string_view text, Token&& token);
 
+	/// Takes a screenshot of the visible area of this element and returns a Base64 encoded string with the
+	/// image data.
+	template<typename Token>
+	auto async_take_screenshot(Token&& token);
+
 private:
 	friend Session;
 

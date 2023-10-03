@@ -60,6 +60,15 @@ inline auto Element::async_send_keys(std::string_view text, Token&& token)
 	                       [](curlio::detail::asio_error_code& /* ec */, nlohmann::json /* response */) {});
 }
 
+template<typename Token>
+inline auto Element::async_take_screenshot(Token&& token)
+{
+	return _session->_get(_prefix + "/screenshot", std::forward<Token>(token),
+	                      [](curlio::detail::asio_error_code& /* ec */, nlohmann::json response) {
+		                      return std::move(response["value"].get_ref<std::string&>());
+	                      });
+}
+
 inline Element::Element(std::shared_ptr<Session> session, std::string id)
     : _session{ std::move(session) }, _id{ std::move(id) }
 {

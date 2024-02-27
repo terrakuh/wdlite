@@ -19,25 +19,10 @@ option(WDLITE_FETCH_DEPENDENCIES "Fetches the required dependencies automaticall
 option(WDLITE_ENABLE_LOGGING "Prints debug information. Mainly for development." OFF)
 mark_as_advanced(WDLITE_ENABLE_LOGGING)
 
-set(required REQUIRED)
-if(WDLITE_FETCH_DEPENDENCIES)
-  set(required QUIET)
-endif()
+include(cmake/CPM.cmake)
 
-find_package(nlohmann_json ${required})
-if(NOT nlohmann_json_FOUND AND WDLITE_FETCH_DEPENDENCIES)
-  message(STATUS "nlohmann_json not found. Fetching from GitHub.")
-  include(FetchContent)
-  set(JSON_Install ON)
-  FetchContent_Declare(
-    nlohmann_json
-    URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.2.zip
-    URL_HASH SHA256=95651d7d1fcf2e5c3163c3d37df6d6b3e9e5027299e6bd050d157322ceda9ac9
-  )
-  FetchContent_MakeAvailable(nlohmann_json)
-endif()
-
-add_subdirectory(vendor/cURLio)
+CPMAddPackage("gh:nlohmann/json@3.11.3")
+CPMAddPackage("gh:terrakuh/cURLio#v0.4")
 
 add_subdirectory(wdlite)
 

@@ -127,7 +127,7 @@ auto perform_request(std::shared_ptr<curlio::Session> session, const std::string
 			  break;
 		  }
 	  },
-	  token, executor);
+	  token, std::move(executor));
 }
 
 } // namespace detail

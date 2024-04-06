@@ -106,6 +106,7 @@ private:
 	auto _post(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
 	template<typename Token, typename Lambda>
 	auto _delete(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
+	bool _check_error(curlio::detail::asio_error_code& ec, const nlohmann::json& response);
 };
 
 } // namespace wdlite

@@ -8,21 +8,19 @@ project(
   LANGUAGES CXX
 )
 
-set(${PROJECT_NAME}_TOP_LEVEL ON)
+set(WDLITE_TOP_LEVEL ON)
 get_directory_property(parent_directory PARENT_DIRECTORY)
 if(parent_directory)
-  set(${PROJECT_NAME}_TOP_LEVEL OFF)
+  set(WDLITE_TOP_LEVEL OFF)
 endif()
 
-option(WDLITE_BUILD_EXAMPLES "Build the provided examples." ${PROJECT_NAME}_TOP_LEVEL)
-option(WDLITE_FETCH_DEPENDENCIES "Fetches the required dependencies automatically." OFF)
+option(WDLITE_BUILD_EXAMPLES "Build the provided examples." ${WDLITE_TOP_LEVEL})
 option(WDLITE_ENABLE_LOGGING "Prints debug information. Mainly for development." OFF)
 mark_as_advanced(WDLITE_ENABLE_LOGGING)
 
-include(cmake/CPM.cmake)
-
-CPMAddPackage("gh:nlohmann/json@3.11.3")
-CPMAddPackage("gh:terrakuh/cURLio#v0.4")
+find_package(cURLio REQUIRED)
+# add_subdirectory(vendor/cURLio)
+find_package(nlohmann_json REQUIRED)
 
 add_subdirectory(wdlite)
 
@@ -54,7 +52,7 @@ install(
 )
 
 # CPack
-if(${PROJECT_NAME}_TOP_LEVEL)
+if(WDLITE_TOP_LEVEL_TOP_LEVEL)
   set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
   set(CPACK_PACKAGE_CONTACT "Yunus Ayar")
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${PROJECT_DESCRIPTION}")

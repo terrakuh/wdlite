@@ -1,4 +1,5 @@
 #include "element.hpp"
+#include "error.hpp"
 #include "log.hpp"
 #include "session.hpp"
 
@@ -122,7 +123,7 @@ auto perform_request(std::shared_ptr<curlio::Session> session, const std::string
 		  }
 			// Response was received now finish up.
 		  case 2:
-				WDLITE_DEBUG("Result: " << std::get<2>(result));
+			  WDLITE_DEBUG("Result: " << std::get<2>(result));
 			  detail::complete_token(self, lambda, ec, nlohmann::json::parse(std::get<2>(result)));
 			  break;
 		  }
@@ -187,13 +188,18 @@ inline auto Session::async_get_page_source(Token&& token)
 template<typename Token>
 inline auto Session::async_find_element(std::string_view selector, LocatorStrategy strategy, Token&& token)
 {
-	return _post(_prefix + "/element",
-	             nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
-	             std::forward<Token>(token),
-	             [this](curlio::detail::asio_error_code& ec, nlohmann::json response) {
-		             return std::make_optional(Element{
-		               shared_from_this(), std::move(response["value"].front().get_ref<std::string&>()) });
-	             });
+	return _post(
+	  _prefix + "/element",
+	  nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
+	  std::forward<Token>(token),
+	  [this](curlio::detail::asio_error_code& ec, nlohmann::json response) -> std::optional<Element> {
+		  if (_check_error(ec, response)) {
+			  return Element{ shared_from_this(), std::move(response["value"].front().get_ref<std::string&>()) };
+		  } else if (ec == Code::no_such_element) {
+			  ec = {};
+		  }
+		  return std::nullopt;
+	  });
 }
 
 template<typename Token>
@@ -203,7 +209,13 @@ inline auto Session::async_find_elements(std::string_view selector, LocatorStrat
 	  _prefix + "/elements",
 	  nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
 	  std::forward<Token>(token), [this](curlio::detail::asio_error_code& ec, nlohmann::json response) {
-		  return Element{ shared_from_this(), std::move(response["value"].front().get_ref<std::string&>()) };
+		  std::vector<Element> elements{};
+		  if (_check_error(ec, response)) {
+			  for (auto& el : response["value"]) {
+				  elements.push_back(Element{ shared_from_this(), std::move(el.front().get_ref<std::string&>()) });
+			  }
+		  }
+		  return elements;
 	  });
 }
 
@@ -267,7 +279,7 @@ inline auto Session::_post(const std::string& endpoint, const nlohmann::json& pa
 	                               [payload = payload.dump()](curlio::Request& request) {
 		                               request.set_option<CURLOPT_COPYPOSTFIELDS>(payload.c_str());
 		                               request.append_header("content-type: application/json");
-																	 WDLITE_DEBUG("Sending: " << payload);
+		                               WDLITE_DEBUG("Sending: " << payload);
 	                               });
 }
 
@@ -282,6 +294,23 @@ inline auto Session::_delete(const std::string& endpoint, const nlohmann::json& 
 		                               request.set_option<CURLOPT_CUSTOMREQUEST>("DELETE");
 		                               request.append_header("content-type: application/json");
 	                               });
+}
+
+inline bool Session::_check_error(curlio::detail::asio_error_code& ec, const nlohmann::json& response)
+{
+	if (ec) {
+		return false;
+	} else if (const auto vit = response.find("value");
+	           vit == response.end() || !(vit->is_object() || vit->is_array())) {
+		ec = Code::unknown_webdirver_error;
+	} else if (vit->is_array()) {
+		return true;
+	} else if (const auto eit = vit->find("error"); eit != vit->end() && eit->is_string()) {
+		ec = convert_webdriver_error(eit->get_ref<const std::string&>());
+	} else {
+		return true;
+	}
+	return false;
 }
 
 // Define this here to be able to call other functions.

@@ -6,7 +6,7 @@ add_library(wdlite::wdlite ALIAS wdlite)
 target_include_directories(
   wdlite INTERFACE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..>" $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(wdlite INTERFACE curlio::curlio nlohmann_json::nlohmann_json)
+target_link_libraries(wdlite INTERFACE cURLio::cURLio nlohmann_json::nlohmann_json)
 target_compile_features(wdlite INTERFACE cxx_std_17)
 
 if(WDLITE_ENABLE_LOGGING)

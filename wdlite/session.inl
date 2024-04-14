@@ -59,6 +59,23 @@ constexpr std::string_view strategy_to_string(LocatorStrategy strategy) noexcept
 	return "";
 }
 
+inline bool check_error(curlio::detail::asio_error_code& ec, const nlohmann::json& response)
+{
+	if (ec) {
+		return false;
+	} else if (const auto vit = response.find("value");
+	           vit == response.end() || !(vit->is_object() || vit->is_array())) {
+		ec = Code::unknown_webdirver_error;
+	} else if (vit->is_array()) {
+		return true;
+	} else if (const auto eit = vit->find("error"); eit != vit->end() && eit->is_string()) {
+		ec = convert_webdriver_error(eit->get_ref<const std::string&>());
+	} else {
+		return true;
+	}
+	return false;
+}
+
 template<typename Lambda>
 constexpr auto derive_asio_signature() noexcept
 {
@@ -159,7 +176,7 @@ inline auto Session::async_navigate(std::string_view url, Token&& token)
 }
 
 template<typename Token>
-inline auto Session::async_get_current_url(Token&& token)
+inline auto Session::async_get_current_url(Token&& token) const
 {
 	return _get(_prefix + "/title", std::forward<Token>(token),
 	            [](curlio::detail::asio_error_code& ec, nlohmann::json response) {
@@ -168,16 +185,16 @@ inline auto Session::async_get_current_url(Token&& token)
 }
 
 template<typename Token>
-inline auto Session::async_get_title(Token&& token)
+inline auto Session::async_get_title(Token&& token) const
 {
 	return _get(_prefix + "/title", std::forward<Token>(token),
 	            [](curlio::detail::asio_error_code& ec, nlohmann::json response) {
-		            return response["value"].get<std::string>();
+		            return response["value"].get_ref<std::string&>();
 	            });
 }
 
 template<typename Token>
-inline auto Session::async_get_page_source(Token&& token)
+inline auto Session::async_get_page_source(Token&& token) const
 {
 	return _get(_prefix + "/source", std::forward<Token>(token),
 	            [](curlio::detail::asio_error_code& ec, nlohmann::json response) {
@@ -186,37 +203,17 @@ inline auto Session::async_get_page_source(Token&& token)
 }
 
 template<typename Token>
-inline auto Session::async_find_element(std::string_view selector, LocatorStrategy strategy, Token&& token)
+inline auto Session::async_find_element(std::string_view selector, LocatorStrategy strategy,
+                                        Token&& token) const
 {
-	return _post(
-	  _prefix + "/element",
-	  nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
-	  std::forward<Token>(token),
-	  [this](curlio::detail::asio_error_code& ec, nlohmann::json response) -> std::optional<Element> {
-		  if (_check_error(ec, response)) {
-			  return Element{ shared_from_this(), std::move(response["value"].front().get_ref<std::string&>()) };
-		  } else if (ec == Code::no_such_element) {
-			  ec = {};
-		  }
-		  return std::nullopt;
-	  });
+	return _async_find_element(_prefix + "/element", selector, strategy, std::forward<Token>(token));
 }
 
 template<typename Token>
-inline auto Session::async_find_elements(std::string_view selector, LocatorStrategy strategy, Token&& token)
+inline auto Session::async_find_elements(std::string_view selector, LocatorStrategy strategy,
+                                         Token&& token) const
 {
-	return _post(
-	  _prefix + "/elements",
-	  nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
-	  std::forward<Token>(token), [this](curlio::detail::asio_error_code& ec, nlohmann::json response) {
-		  std::vector<Element> elements{};
-		  if (_check_error(ec, response)) {
-			  for (auto& el : response["value"]) {
-				  elements.push_back(Element{ shared_from_this(), std::move(el.front().get_ref<std::string&>()) });
-			  }
-		  }
-		  return elements;
-	  });
+	return _async_find_elements(_prefix + "/elements", selector, strategy, std::forward<Token>(token));
 }
 
 template<typename Token>
@@ -264,7 +261,7 @@ inline auto Session::async_execute_script_async(std::string_view script, nlohman
 }
 
 template<typename Token, typename Lambda>
-inline auto Session::_get(const std::string& endpoint, Token&& token, Lambda&& lambda)
+inline auto Session::_get(const std::string& endpoint, Token&& token, Lambda&& lambda) const
 {
 	return detail::perform_request(_session, _endpoint + endpoint, std::forward<Token>(token),
 	                               std::forward<Lambda>(lambda), [](curlio::Request& /* request */) {});
@@ -272,7 +269,7 @@ inline auto Session::_get(const std::string& endpoint, Token&& token, Lambda&& l
 
 template<typename Token, typename Lambda>
 inline auto Session::_post(const std::string& endpoint, const nlohmann::json& payload, Token&& token,
-                           Lambda&& lambda)
+                           Lambda&& lambda) const
 {
 	return detail::perform_request(_session, _endpoint + endpoint, std::forward<Token>(token),
 	                               std::forward<Lambda>(lambda),
@@ -296,21 +293,40 @@ inline auto Session::_delete(const std::string& endpoint, const nlohmann::json& 
 	                               });
 }
 
-inline bool Session::_check_error(curlio::detail::asio_error_code& ec, const nlohmann::json& response)
+template<typename Token>
+inline auto Session::_async_find_element(const std::string& endpoint, std::string_view selector,
+                                         LocatorStrategy strategy, Token&& token) const
 {
-	if (ec) {
-		return false;
-	} else if (const auto vit = response.find("value");
-	           vit == response.end() || !(vit->is_object() || vit->is_array())) {
-		ec = Code::unknown_webdirver_error;
-	} else if (vit->is_array()) {
-		return true;
-	} else if (const auto eit = vit->find("error"); eit != vit->end() && eit->is_string()) {
-		ec = convert_webdriver_error(eit->get_ref<const std::string&>());
-	} else {
-		return true;
-	}
-	return false;
+	return _post(
+	  endpoint, nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
+	  std::forward<Token>(token),
+	  [this](curlio::detail::asio_error_code& ec, nlohmann::json response) -> std::optional<Element> {
+		  if (detail::check_error(ec, response)) {
+			  return Element{ const_cast<Session*>(this)->shared_from_this(),
+				                std::move(response["value"].front().get_ref<std::string&>()) };
+		  } else if (ec == Code::no_such_element) {
+			  ec = {};
+		  }
+		  return std::nullopt;
+	  });
+}
+
+template<typename Token>
+inline auto Session::_async_find_elements(const std::string& endpoint, std::string_view selector,
+                                          LocatorStrategy strategy, Token&& token) const
+{
+	return _post(
+	  endpoint, nlohmann::json{ { "using", detail::strategy_to_string(strategy) }, { "value", selector } },
+	  std::forward<Token>(token), [this](curlio::detail::asio_error_code& ec, nlohmann::json response) {
+		  std::vector<Element> elements{};
+		  if (detail::check_error(ec, response)) {
+			  for (auto& el : response["value"]) {
+				  elements.push_back(Element{ const_cast<Session*>(this)->shared_from_this(),
+				                              std::move(el.front().get_ref<std::string&>()) });
+			  }
+		  }
+		  return elements;
+	  });
 }
 
 // Define this here to be able to call other functions.

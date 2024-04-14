@@ -60,7 +60,7 @@ public:
 	 * @return The result stored in a `std::string` depending on `token`.
 	 */
 	template<typename Token>
-	auto async_get_current_url(Token&& token);
+	auto async_get_current_url(Token&& token) const;
 	/**
 	 * Retrieves the current pages title.
 	 *
@@ -68,7 +68,7 @@ public:
 	 * @return The result stored in a `std::string` depending on `token`.
 	 */
 	template<typename Token>
-	auto async_get_title(Token&& token);
+	auto async_get_title(Token&& token) const;
 	/**
 	 * Retrieves the current pages source code.
 	 *
@@ -76,12 +76,12 @@ public:
 	 * @return The result stored in a `std::string` depending on `token`.
 	 */
 	template<typename Token>
-	auto async_get_page_source(Token&& token);
+	auto async_get_page_source(Token&& token) const;
 
 	template<typename Token>
-	auto async_find_element(std::string_view selector, LocatorStrategy strategy, Token&& token);
+	auto async_find_element(std::string_view selector, LocatorStrategy strategy, Token&& token) const;
 	template<typename Token>
-	auto async_find_elements(std::string_view selector, LocatorStrategy strategy, Token&& token);
+	auto async_find_elements(std::string_view selector, LocatorStrategy strategy, Token&& token) const;
 
 	template<typename Token>
 	auto async_execute_script_sync(std::string_view script, Token&& token);
@@ -101,12 +101,17 @@ private:
 	Session(executor_type executor, std::string endpoint);
 
 	template<typename Token, typename Lambda>
-	auto _get(const std::string& endpoint, Token&& token, Lambda&& lambda);
+	auto _get(const std::string& endpoint, Token&& token, Lambda&& lambda) const;
 	template<typename Token, typename Lambda>
-	auto _post(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
+	auto _post(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda) const;
 	template<typename Token, typename Lambda>
 	auto _delete(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
-	bool _check_error(curlio::detail::asio_error_code& ec, const nlohmann::json& response);
+	template<typename Token>
+	auto _async_find_element(const std::string& endpoint, std::string_view selector, LocatorStrategy strategy,
+	                         Token&& token) const;
+	template<typename Token>
+	auto _async_find_elements(const std::string& endpoint, std::string_view selector, LocatorStrategy strategy,
+	                          Token&& token) const;
 };
 
 } // namespace wdlite

@@ -15,11 +15,16 @@ public:
 	const std::string& get_id() const noexcept;
 
 	template<typename Token>
-	auto async_get_text(Token&& token);
+	auto async_get_text(Token&& token) const;
 	template<typename Token>
-	auto async_get_attribute(std::string_view name, Token&& token);
+	auto async_get_attribute(std::string_view name, Token&& token) const;
 	template<typename Token>
-	auto async_get_property(std::string_view name, Token&& token);
+	auto async_get_property(std::string_view name, Token&& token) const;
+
+	template<typename Token>
+	auto async_find_element(std::string_view selector, LocatorStrategy strategy, Token&& token) const;
+	template<typename Token>
+	auto async_find_elements(std::string_view selector, LocatorStrategy strategy, Token&& token) const;
 
 	template<typename Token>
 	auto async_click(Token&& token);
@@ -31,7 +36,7 @@ public:
 	/// Takes a screenshot of the visible area of this element and returns a Base64 encoded string with the
 	/// image data.
 	template<typename Token>
-	auto async_take_screenshot(Token&& token);
+	auto async_take_screenshot(Token&& token) const;
 
 private:
 	friend Session;

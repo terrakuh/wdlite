@@ -7,7 +7,7 @@ inline Element::executor_type Element::get_executor() const noexcept { return _s
 inline const std::string& Element::get_id() const noexcept { return _id; }
 
 template<typename Token>
-inline auto Element::async_get_text(Token&& token)
+inline auto Element::async_get_text(Token&& token) const
 {
 	return _session->_get(_prefix + "/text", std::forward<Token>(token),
 	                      [](curlio::detail::asio_error_code& /* ec */, nlohmann::json response) {
@@ -16,7 +16,7 @@ inline auto Element::async_get_text(Token&& token)
 }
 
 template<typename Token>
-inline auto Element::async_get_attribute(std::string_view name, Token&& token)
+inline auto Element::async_get_attribute(std::string_view name, Token&& token) const
 {
 	return _session->_get(make_keys(_prefix, "/attribute/", name), std::forward<Token>(token),
 	                      [](curlio::detail::asio_error_code& /* ec */, nlohmann::json response) {
@@ -28,7 +28,7 @@ inline auto Element::async_get_attribute(std::string_view name, Token&& token)
 }
 
 template<typename Token>
-inline auto Element::async_get_property(std::string_view name, Token&& token)
+inline auto Element::async_get_property(std::string_view name, Token&& token) const
 {
 	return _session->_get(make_keys(_prefix, "/property/", name), std::forward<Token>(token),
 	                      [](curlio::detail::asio_error_code& /* ec */, nlohmann::json response) {
@@ -37,6 +37,21 @@ inline auto Element::async_get_property(std::string_view name, Token&& token)
 		                               ? std::nullopt
 		                               : std::make_optional(std::move(it->get_ref<std::string&>()));
 	                      });
+}
+
+template<typename Token>
+inline auto Element::async_find_element(std::string_view selector, LocatorStrategy strategy,
+                                        Token&& token) const
+{
+	return _session->_async_find_element(_prefix + "/element", selector, strategy, std::forward<Token>(token));
+}
+
+template<typename Token>
+inline auto Element::async_find_elements(std::string_view selector, LocatorStrategy strategy,
+                                         Token&& token) const
+{
+	return _session->_async_find_elements(_prefix + "/elements", selector, strategy,
+	                                      std::forward<Token>(token));
 }
 
 template<typename Token>
@@ -61,7 +76,7 @@ inline auto Element::async_send_keys(std::string_view text, Token&& token)
 }
 
 template<typename Token>
-inline auto Element::async_take_screenshot(Token&& token)
+inline auto Element::async_take_screenshot(Token&& token) const
 {
 	return _session->_get(_prefix + "/screenshot", std::forward<Token>(token),
 	                      [](curlio::detail::asio_error_code& /* ec */, nlohmann::json response) {

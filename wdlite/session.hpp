@@ -105,7 +105,7 @@ private:
 	template<typename Token, typename Lambda>
 	auto _post(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda) const;
 	template<typename Token, typename Lambda>
-	auto _delete(const std::string& endpoint, const nlohmann::json& payload, Token&& token, Lambda&& lambda);
+	auto _delete(const std::string& endpoint, Token&& token, Lambda&& lambda);
 	template<typename Token>
 	auto _async_find_element(const std::string& endpoint, std::string_view selector, LocatorStrategy strategy,
 	                         Token&& token) const;

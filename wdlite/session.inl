@@ -281,16 +281,11 @@ inline auto Session::_post(const std::string& endpoint, const nlohmann::json& pa
 }
 
 template<typename Token, typename Lambda>
-inline auto Session::_delete(const std::string& endpoint, const nlohmann::json& payload, Token&& token,
-                             Lambda&& lambda)
+inline auto Session::_delete(const std::string& endpoint, Token&& token, Lambda&& lambda)
 {
-	return detail::perform_request(_session, _endpoint + endpoint, std::forward<Token>(token),
-	                               std::forward<Lambda>(lambda),
-	                               [payload = payload.dump()](curlio::Request& request) {
-		                               request.set_option<CURLOPT_POSTFIELDS>(payload.c_str());
-		                               request.set_option<CURLOPT_CUSTOMREQUEST>("DELETE");
-		                               request.append_header("content-type: application/json");
-	                               });
+	return detail::perform_request(
+	  _session, _endpoint + endpoint, std::forward<Token>(token), std::forward<Lambda>(lambda),
+	  [](curlio::Request& request) { request.set_option<CURLOPT_CUSTOMREQUEST>("DELETE"); });
 }
 
 template<typename Token>
@@ -334,7 +329,7 @@ inline Session::~Session()
 {
 	// Closing the last window will delete the session. It is safe to call this function in the destructor as
 	// the internal `detail::perform_request()` does not rely on this instance.
-	_delete(_prefix + "/window", nlohmann::json::object(), CURLIO_ASIO_NS::detached,
+	_delete(_prefix, CURLIO_ASIO_NS::detached,
 	        [](curlio::detail::asio_error_code& /* ec */, nlohmann::json /* response */) {});
 }
 
